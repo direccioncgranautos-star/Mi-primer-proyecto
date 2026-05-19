@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Inspección Vehículos — Granautos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f0f2f5;min-height:100vh;font-size:14px}
+
+/* HEADER */
+.header{background:#1a1a1a;padding:10px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px #0005}
+.logo-wrap{background:#fff;border-radius:7px;padding:4px 8px;display:flex;align-items:center;gap:0}
+.logo-gran{font-size:18px;font-weight:900;color:#1a1a1a;letter-spacing:-0.5px}
+.logo-circle{width:26px;height:26px;background:#2e7dc5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 1px}
+.logo-circle span{color:#fff;font-size:15px;font-weight:900;font-style:italic}
+.logo-autos{font-size:18px;font-weight:900;color:#1a1a1a;letter-spacing:-0.5px}
+.header-info{flex:1}
+.header-info h1{color:#fff;font-size:13px;font-weight:700;line-height:1.2}
+.header-info p{color:#ffffff88;font-size:10px;margin-top:1px}
+.formato-badge{background:#2e7dc5;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-top:3px;display:inline-block}
+
+/* PROGRESS */
+.progress-wrap{background:#1a1a1a;padding:8px 14px 10px;border-top:1px solid #333}
+.progress-track{height:4px;background:#333;border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:#2e7dc5;border-radius:2px;transition:width .4s}
+.progress-text{font-size:10px;color:#ffffff66;margin-top:4px;text-align:right}
+
+/* VEHICLE INFO BAR */
+.veh-bar{background:#2e7dc5;padding:8px 14px;font-size:12px;color:#fff;min-height:32px}
+.veh-bar span{opacity:.8}
+.veh-bar strong{font-weight:700}
+
+/* CONTAINER */
+.container{padding:10px 10px 80px}
+
+/* ACCORDION */
+.acc-item{background:#fff;border-radius:12px;margin-bottom:8px;overflow:hidden;box-shadow:0 1px 3px #0001;border:1.5px solid #e8e8e8;transition:border-color .2s}
+.acc-item.open{border-color:#2e7dc5}
+.acc-header{display:flex;align-items:center;padding:13px 14px;cursor:pointer;user-select:none;gap:10px;-webkit-tap-highlight-color:transparent}
+.acc-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:#f0f4f8}
+.acc-item.open .acc-icon{background:#e8f1fa}
+.acc-labels{flex:1;min-width:0}
+.acc-title{font-size:14px;font-weight:700;color:#1a1a1a}
+.acc-sub{font-size:11px;color:#888;margin-top:1px}
+.acc-meta{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.acc-count{font-size:10px;background:#f0f0f0;color:#666;padding:2px 7px;border-radius:10px;font-weight:600}
+.acc-item.open .acc-count{background:#e8f1fa;color:#2e7dc5}
+.acc-chevron{font-size:16px;color:#bbb;transition:transform .3s;line-height:1}
+.acc-item.open .acc-chevron{transform:rotate(180deg);color:#2e7dc5}
+.acc-body{display:none;padding:0 14px 14px;border-top:1px solid #f0f0f0}
+.acc-item.open .acc-body{display:block}
+
+/* FIELDS */
+.field-group{margin-top:14px}
+.field-label{font-size:12px;font-weight:700;color:#444;margin-bottom:6px;display:block}
+.req{color:#e53e3e}
+input[type=text],input[type=number],select,textarea{width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:9px;font-size:14px;background:#fafafa;-webkit-appearance:none;appearance:none;transition:border-color .2s;color:#1a1a1a}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#2e7dc5;background:#fff}
+textarea{min-height:70px;resize:vertical}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+
+/* RADIO PILLS */
+.pill-group{display:flex;gap:6px;flex-wrap:wrap}
+.pill{padding:8px 14px;border:1.5px solid #e0e0e0;border-radius:20px;font-size:13px;cursor:pointer;background:#fafafa;color:#555;transition:all .15s;font-weight:500;-webkit-tap-highlight-color:transparent}
+.pill:active{transform:scale(0.96)}
+.pill.sel{background:#2e7dc5;border-color:#2e7dc5;color:#fff;font-weight:700}
+.pill.sel-si{background:#22c55e;border-color:#22c55e;color:#fff}
+.pill.sel-no{background:#ef4444;border-color:#ef4444;color:#fff}
+
+/* GRID 2 */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+
+/* SUBSECTION LABEL */
+.sub-label{font-size:12px;font-weight:700;color:#2e7dc5;margin-top:16px;margin-bottom:8px;padding-bottom:4px;border-bottom:1.5px solid #e8f1fa;display:flex;align-items:center;gap:6px}
+
+/* RATING TABLE */
+.rtable-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:4px;border-radius:8px;border:1px solid #eee}
+table.rt{width:100%;border-collapse:collapse;min-width:max-content}
+table.rt th{font-size:10px;font-weight:700;color:#555;text-align:center;padding:7px 5px;background:#f8f8f8;border-bottom:1.5px solid #eee;white-space:nowrap}
+table.rt th:first-child{text-align:left;min-width:130px;padding-left:10px;position:sticky;left:0;background:#f8f8f8;z-index:2}
+table.rt td{padding:3px 4px;border-bottom:1px solid #f5f5f5}
+table.rt tr:last-child td{border-bottom:none}
+table.rt tr:nth-child(even) td{background:#fafafa}
+table.rt tr:nth-child(even) td:first-child{background:#f8f8f8}
+table.rt td:first-child{font-size:11px;color:#333;font-weight:600;padding:5px 6px 5px 10px;white-space:nowrap;position:sticky;left:0;background:#fff;z-index:1}
+table.rt tr:nth-child(even) td:first-child{background:#f8f8f8}
+.rc{text-align:center;padding:3px!important}
+.rc input{display:none}
+.rc label{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer;border:1.5px solid #e0e0e0;color:#aaa;transition:all .12s;-webkit-tap-highlight-color:transparent}
+.rc label:active{transform:scale(0.9)}
+.rc input:checked+label{color:#fff;border-color:transparent}
+.rB input:checked+label{background:#22c55e}
+.rR input:checked+label{background:#f59e0b}
+.rD input:checked+label{background:#f97316}
+.rM input:checked+label{background:#ef4444}
+.rNA input:checked+label{background:#94a3b8}
+.rN input:checked+label{background:#22c55e}
+.rMe input:checked+label{background:#f59e0b}
+.rBa input:checked+label{background:#f97316}
+.rC input:checked+label{background:#ef4444}
+.rS input:checked+label{background:#ef4444}
+.rH input:checked+label{background:#f59e0b}
+.rBN input:checked+label{background:#22c55e}
+.rRY input:checked+label{background:#f59e0b}
+.rSM input:checked+label{background:#f97316}
+.rRP input:checked+label{background:#3b82f6}
+.rRR input:checked+label{background:#a78bfa}
+.rMR input:checked+label{background:#ef4444}
+.rDM input:checked+label{background:#dc2626}
+.rDF input:checked+label{background:#991b1b}
+.rIM input:checked+label{background:#0891b2}
+.rPD input:checked+label{background:#d97706}
+.rOX input:checked+label{background:#92400e}
+.rCO input:checked+label{background:#7c3aed}
+.rFI input:checked+label{background:#be123c}
+.rRG input:checked+label{background:#64748b}
+
+/* BOTTOM STICKY BAR */
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e0e0e0;padding:10px 12px;display:flex;gap:8px;z-index:300;box-shadow:0 -2px 10px #0001}
+.btn{border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;padding:12px 16px;transition:all .15s;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn:active{transform:scale(0.97)}
+.btn-wapp{background:#25D366;color:#fff;flex:1}
+.btn-pdf{background:#1a1a1a;color:#fff;flex:1}
+.btn-nueva{background:#f0f0f0;color:#555;padding:12px}
+
+/* SUMMARY */
+.sum-card{background:#fff;border-radius:12px;margin-bottom:10px;overflow:hidden;border:1.5px solid #e8e8e8}
+.sum-head{background:#1a1a1a;padding:10px 14px;display:flex;align-items:center;gap:8px}
+.sum-head span{font-size:14px;color:#fff;font-weight:700}
+.sum-row{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid #f5f5f5;gap:8px}
+.sum-row:last-child{border-bottom:none}
+.sum-lbl{font-size:12px;color:#666;flex:1}
+.sum-val{font-size:12px;font-weight:700;color:#1a1a1a;text-align:right}
+.sum-val.bad{color:#ef4444}
+.sum-val.good{color:#22c55e}
+.sum-val.warn{color:#f59e0b}
+
+.reject-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 14px 14px}
+.reject-card{border-radius:9px;padding:10px;text-align:center;border:1.5px solid #eee}
+.reject-card.si{background:#fef2f2;border-color:#fca5a5}
+.reject-card.no{background:#f0fdf4;border-color:#86efac}
+.reject-card.na{background:#f8fafc;border-color:#cbd5e1}
+.reject-card .rlbl{font-size:10px;color:#888;margin-bottom:4px}
+.reject-card .rval{font-size:14px;font-weight:800}
+.reject-card.si .rval{color:#ef4444}
+.reject-card.no .rval{color:#22c55e}
+.reject-card.na .rval{color:#94a3b8}
+
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo-wrap">
+    <span class="logo-gran">Gran</span>
+    <div class="logo-circle"><span>a</span></div>
+    <span class="logo-autos">utos</span>
+  </div>
+  <div class="header-info">
+    <h1>Lista de Chequeo Vehículos</h1>
+    <p>Inspección técnica pericial</p>
+    <div class="formato-badge">FO-GO-04</div>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-track"><div class="progress-fill" id="pFill" style="width:0%"></div></div>
+  <div class="progress-text" id="pText">0 de 7 secciones completadas</div>
+</div>
+
+<!-- VEH BAR -->
+<div class="veh-bar" id="vehBar"><span>Diligencia la Sección 1 para ver el vehículo</span></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MAIN -->
+<div class="container" id="app"></div>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+  <button class="btn btn-wapp" onclick="copyWapp()">📱 WhatsApp</button>
+  <button class="btn btn-pdf" onclick="genPDF()">📄 PDF</button>
+  <button class="btn btn-nueva" onclick="newInsp()" title="Nueva inspección">🔄</button>
+</div>
+
+<script>
+const D={};// formData
+
+function sid(sec,sub,item,opt){return(sec+'_'+sub+'_'+item+'_'+opt).replace(/[^\w]/g,'_');}
+function gv(k){return D[k]||'—';}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function updateProgress(){
+  // count sections with at least one filled field
+  let done=0;
+  const checks=[
+    ()=>D.placa||D.marca,
+    ()=>Object.keys(D).some(k=>k.startsWith('s2_')),
+    ()=>Object.keys(D).some(k=>k.startsWith('s3_')),
+    ()=>Object.keys(D).some(k=>k.startsWith('s4_')),
+    ()=>Object.keys(D).some(k=>k.startsWith('s5_')),
+    ()=>Object.keys(D).some(k=>k.startsWith('s6_')),
+    ()=>D.rechazo_gral,
+  ];
+  checks.forEach(fn=>{if(fn())done++;});
+  document.getElementById('pFill').style.width=(done/7*100)+'%';
+  document.getElementById('pText').textContent=done+' de 7 secciones con datos';
+  const placa=D.placa||'';const marca=D.marca||'';const linea=D.linea||'';const modelo=D.modelo||'';
+  const vb=document.getElementById('vehBar');
+  if(placa||marca){
+    vb.innerHTML=`<strong>${marca} ${linea} ${modelo}</strong> <span>· Placa: <strong>${placa}</strong> · Km: <strong>${D.km||'—'}</strong></span>`;
+  }
+}
+
+// ── RENDER ────────────────────────────────────────────────
+function pill(id,opts,siNo){
+  let h=`<div class="pill-group">`;
+  opts.forEach(o=>{
+    let cls='pill'+(D[id]===o?' sel'+(siNo&&o==='Sí'?' sel-si':siNo&&o==='No'?' sel-no':''):'');
+    h+=`<div class="${cls}" onclick="setVal('${id}','${o}',this,${siNo})">${o}</div>`;
+  });
+  return h+'</div>';
+}
+function setVal(id,val,el,siNo){
+  D[id]=val;
+  const pg=el.parentElement;
+  pg.querySelectorAll('.pill').forEach(p=>{
+    p.className='pill'+(p.textContent===val?' sel'+(siNo&&val==='Sí'?' sel-si':siNo&&val==='No'?' sel-no':''):'');
+  });
+  updateProgress();
+}
+
+function ratingTable(secId,subLabel,items,opts,hdrs,clss){
+  let h=`<div class="rtable-wrap"><table class="rt"><thead><tr><th>Ítem</th>`;
+  hdrs.forEach(hd=>h+=`<th>${hd}</th>`);
+  h+=`</tr></thead><tbody>`;
+  items.forEach(item=>{
+    const gid='g_'+sid(secId,subLabel,item,'');
+    h+=`<tr><td>${item}</td>`;
+    opts.forEach((opt,oi)=>{
+      const fid=sid(secId,subLabel,item,opt);
+      const chk=D[fid]?'checked':'';
+      h+=`<td class="rc ${clss[oi]}"><input type="radio" name="${gid}" id="${fid}" value="${opt}" ${chk} onchange="setRating('${secId}','${subLabel}','${item}','${opts.join(',')}','${opt}')"><label for="${fid}">${opt}</label></td>`;
+    });
+    h+=`</tr>`;
+  });
+  return h+`</tbody></table></div>`;
+}
+function setRating(secId,subLabel,item,optsStr,val){
+  const opts=optsStr.split(',');
+  opts.forEach(o=>delete D[sid(secId,subLabel,item,o)]);
+  D[sid(secId,subLabel,item,val)]=val;
+  updateProgress();
+}
+
+function getItemVal(secId,subLabel,item,opts){
+  for(const o of opts){if(D[sid(secId,subLabel,item,o)])return o;}
+  return '—';
+}
+
+// ── SECTIONS ─────────────────────────────────────────────
+function sections(){
+  return [
+    {id:'s1',icon:'📋',title:'Información General',sub:'Datos del vehículo e inspector',render:renderS1},
+    {id:'s2',icon:'🪑',title:'Interior',sub:'Tapizados y electrónica interior',render:renderS2},
+    {id:'s3',icon:'💡',title:'Luces',sub:'Estado de todas las luces',render:renderS3},
+    {id:'s4',icon:'🚗',title:'Carrocería y Estructura',sub:'Estado visual de carrocería',render:renderS4},
+    {id:'s5',icon:'🛢️',title:'Fluidos, Fugas y Llantas',sub:'Niveles, fugas y profundidad',render:renderS5},
+    {id:'s6',icon:'⚙️',title:'Suspensión y Partes Bajas',sub:'Estado mecánico inferior',render:renderS6},
+    {id:'s7',icon:'✅',title:'Rechazos y Cierre',sub:'Decisión final del perito',render:renderS7},
+  ];
+}
+
+function renderS1(){
+  return `
+  <div class="field-group"><label class="field-label">Placa <span class="req">*</span></label>
+    <input type="text" value="${D.placa||''}" oninput="D.placa=this.value.toUpperCase();updateProgress()" placeholder="Ej: ABC123" style="text-transform:uppercase"></div>
+  <div class="g2">
+    <div class="field-group"><label class="field-label">Marca <span class="req">*</span></label>
+      <input type="text" value="${D.marca||''}" oninput="D.marca=this.value.toUpperCase();updateProgress()" placeholder="FORD"></div>
+    <div class="field-group"><label class="field-label">Línea</label>
+      <input type="text" value="${D.linea||''}" oninput="D.linea=this.value.toUpperCase();updateProgress()" placeholder="RANGER"></div>
+  </div>
+  <div class="g2">
+    <div class="field-group"><label class="field-label">Modelo (año) <span class="req">*</span></label>
+      <input type="number" value="${D.modelo||''}" oninput="D.modelo=this.value;updateProgress()" placeholder="2020"></div>
+    <div class="field-group"><label class="field-label">Kilometraje <span class="req">*</span></label>
+      <input type="number" value="${D.km||''}" oninput="D.km=this.value;updateProgress()" placeholder="90000"></div>
+  </div>
+  <div class="field-group"><label class="field-label">Nombre del inspector <span class="req">*</span></label>
+    <input type="text" value="${D.inspector||''}" oninput="D.inspector=this.value;updateProgress()" placeholder="Nombre completo"></div>
+  <div class="field-group"><label class="field-label">Tipo de caja <span class="req">*</span></label>
+    ${pill('caja',['Manual','Automática','Secuencial','CVT','Doble embrague'],false)}</div>
+  <div class="field-group"><label class="field-label">Botón / Código de seguridad</label>
+    ${pill('boton',['Sí','No','N/A'],true)}</div>
+  <div class="field-group"><label class="field-label">Protección a pintura</label>
+    ${pill('pintura',['Sí','No'],true)}</div>
+  <div class="field-group"><label class="field-label">Acompañamiento contraparte</label>
+    ${pill('contraparte',['Sí','No'],true)}</div>`;
+}
+
+function renderS2(){
+  return `
+  <div class="sub-label">🪑 Tapizados</div>
+  ${ratingTable('s2','Tapizados',['Tapizado sillas','Tapizado techo','Tapizado piso','Cinturones','Cabeceros','Carteras puertas','Millare','Parasoles','Guantera','Volante','Tablero acrílico','Pomo','Consola central'],['B','R','D','M'],['B·Bueno','R·Regular','D·Desgaste','M·Malo'],['rB','rR','rD','rM'])}
+  <div class="sub-label">⚡ Electro interior</div>
+  ${ratingTable('s2','Electro',['Radio','Bocina','Tablero','Limpiabrisa','Calefacción','Aire acondicionado','Elevavidrios','Sunroof','Espejos','Testigos tablero','Alarma','Mecanismo sillas'],['B','R','M','NA'],['B·Bueno','R·Regular','M·Malo','N/A'],['rB','rR','rM','rNA'])}
+  <div class="field-group"><label class="field-label">Códigos de falla presentes</label>
+    ${pill('s2_codigos',['Sí','No'],true)}</div>
+  <div class="field-group"><label class="field-label">Observaciones interior</label>
+    <textarea oninput="D.s2_obs=this.value" placeholder="Observaciones...">${D.s2_obs||''}</textarea></div>`;
+}
+
+function renderS3(){
+  return `
+  <div class="sub-label">💡 Estado de luces</div>
+  ${ratingTable('s3','Luces',['Altas','Bajas','Cocuyos','Exploradoras','Direccionales','Estacionarias','Stop trasero','Stop baúl','Tercer stop','Reversa','Luz placa','Luz techo'],['B','R','M','NA'],['B·Bueno','R·Regular','M·Malo','N/A'],['rB','rR','rM','rNA'])}
+  <div class="field-group"><label class="field-label">Observaciones luces</label>
+    <textarea oninput="D.s3_obs=this.value" placeholder="Observaciones...">${D.s3_obs||''}</textarea></div>`;
+}
+
+function renderS4(){
+  return `
+  <div class="sub-label">🚗 Carrocería</div>
+  ${ratingTable('s4','Carroceria',['Guardabarro izq','Puerta del. izq','Puerta tra. izq','Estribo izq','Costado izq','Bomper trasero','Tapa baúl','Costado der','Estribo der','Puerta tra. der','Puerta del. der','Guardabarro der','Bomper delantero','Capot','Capota','Espejos laterales','Espaldar cabina','Piso baúl'],['BN','RY','SM','RP','RR','MR','DM','DF','IM','PD','OX','CO','FI','RG','NA'],['Bueno','Rayón','Sumido','Repint','Reg.r','Mal.r','D.med','D.fue','Imper','P.det','Oxidac','Corros','Fisura','Reg','N/A'],['rBN','rRY','rSM','rRP','rRR','rMR','rDM','rDF','rIM','rPD','rOX','rCO','rFI','rRG','rNA'])}
+  <div class="field-group"><label class="field-label">Observaciones carrocería</label>
+    <textarea oninput="D.s4_obs_caro=this.value" placeholder="Observaciones...">${D.s4_obs_caro||''}</textarea></div>
+  <div class="sub-label">🏗️ Estructura</div>
+  ${ratingTable('s4','Estructura',['Punta del. der','Punta del. izq','Viga derecha','Viga izquierda','Traviesas','Paral panorámico','Parales centrales','Largueros capota','Parales costado','Parales baúl','Punta tra. der','Punta tra. izq','Guardapolvo met','Panel trasero','Cajas de impacto'],['BN','RY','SM','RP','RR','MR','DM','DF','IM','PD','OX','CO','FI','NA'],['Bueno','Rayón','Sumido','Repint','Reg.r','Mal.r','D.med','D.fue','Imper','P.det','Oxidac','Corros','Fisura','N/A'],['rBN','rRY','rSM','rRP','rRR','rMR','rDM','rDF','rIM','rPD','rOX','rCO','rFI','rNA'])}
+  <div class="field-group"><label class="field-label">Observaciones estructura</label>
+    <textarea oninput="D.s4_obs_est=this.value" placeholder="Observaciones...">${D.s4_obs_est||''}</textarea></div>`;
+}
+
+function renderS5(){
+  return `
+  <div class="sub-label">🧪 Nivel de fluidos</div>
+  ${ratingTable('s5','Fluidos',['Aceite de motor','Refrigerante','Dirección hidráulica','Líquido frenos','Limpiabrisa'],['N','Me','B','C'],['N·Normal','M·Medio','B·Bajo','C·Crítico'],['rN','rMe','rBa','rC'])}
+  <div class="sub-label">💧 Fugas</div>
+  ${ratingTable('s5','Fugas',['Aceite motor','Aceite caja','Dir. hidráulica','Amortiguadores','Refrigerante','Frenos','Guardapolvos','Diferencial','Combustible'],['S','No','H'],['S·Sí fuga','N·No fuga','H·Humedad'],['rS','rN','rH'])}
+  <div class="sub-label">🔵 Profundidad llantas (mm)</div>
+  <div class="g2">
+    <div class="field-group"><label class="field-label">Del. izquierda</label>
+      <input type="number" value="${D.ll_di||''}" oninput="D.ll_di=this.value" placeholder="mm"></div>
+    <div class="field-group"><label class="field-label">Del. derecha</label>
+      <input type="number" value="${D.ll_dd||''}" oninput="D.ll_dd=this.value" placeholder="mm"></div>
+    <div class="field-group"><label class="field-label">Tra. izquierda</label>
+      <input type="number" value="${D.ll_ti||''}" oninput="D.ll_ti=this.value" placeholder="mm"></div>
+    <div class="field-group"><label class="field-label">Tra. derecha</label>
+      <input type="number" value="${D.ll_td||''}" oninput="D.ll_td=this.value" placeholder="mm"></div>
+    <div class="field-group"><label class="field-label">Repuesto</label>
+      <input type="number" value="${D.ll_rep||''}" oninput="D.ll_rep=this.value" placeholder="mm"></div>
+  </div>
+  <div class="field-group"><label class="field-label">Observaciones fluidos / llantas</label>
+    <textarea oninput="D.s5_obs=this.value" placeholder="Observaciones...">${D.s5_obs||''}</textarea></div>`;
+}
+
+function renderS6(){
+  return `
+  <div class="sub-label">🔧 Suspensión</div>
+  ${ratingTable('s6','Suspension',['Discos','Past delantera','Past trasera','Espirales','Muelles','Ejes','Caja de dirección','Brazo axial','Terminales','Rótulas','Estabilizadora','Tijeras','Bujes','Rodamientos'],['B','R','M','NA'],['B·Bueno','R·Regular','M·Malo','N/A'],['rB','rR','rM','rNA'])}
+  <div class="sub-label">🔩 Partes bajas</div>
+  ${ratingTable('s6','PartesBajas',['Catalizador','Silenciador','Tubería','Cuna motor','Protectores inf.','Paso ruedas','Refuerzo piso','Impermeabilizado'],['B','R','M','NA'],['B·Bueno','R·Regular','M·Malo','N/A'],['rB','rR','rM','rNA'])}
+  <div class="field-group"><label class="field-label">Observaciones suspensión / partes bajas</label>
+    <textarea oninput="D.s6_obs=this.value" placeholder="Observaciones...">${D.s6_obs||''}</textarea></div>`;
+}
+
+function renderS7(){
+  return `
+  <div class="field-group"><label class="field-label">Rechazo general <span class="req">*</span></label>
+    ${pill('rechazo_gral',['SÍ','NO','Sin precedente'],true)}</div>
+  <div class="field-group"><label class="field-label">Asegurable <span class="req">*</span></label>
+    ${pill('asegurable',['SÍ','NO','Sujeto a políticas'],true)}</div>
+  <div class="g2">
+    <div class="field-group"><label class="field-label">Rec. estructural</label>
+      ${pill('rec_est',['SÍ','NO'],true)}</div>
+    <div class="field-group"><label class="field-label">Rec. carrocería</label>
+      ${pill('rec_caro',['SÍ','NO'],true)}</div>
+    <div class="field-group"><label class="field-label">Rec. eléctrico</label>
+      ${pill('rec_elec',['SÍ','NO'],true)}</div>
+    <div class="field-group"><label class="field-label">Rec. mecánico</label>
+      ${pill('rec_mec',['SÍ','NO'],true)}</div>
+  </div>
+  <div class="field-group"><label class="field-label">Observaciones finales</label>
+    <textarea oninput="D.obs_finales=this.value" placeholder="Observaciones finales del perito...">${D.obs_finales||''}</textarea></div>`;
+}
+
+// ── BUILD APP ─────────────────────────────────────────────
+function buildApp(){
+  const app=document.getElementById('app');
+  app.innerHTML='';
+  const secs=sections();
+  secs.forEach((s,i)=>{
+    const item=document.createElement('div');
+    item.className='acc-item';
+    item.id='acc_'+s.id;
+    item.innerHTML=`
+      <div class="acc-header" onclick="toggleAcc('${s.id}')">
+        <div class="acc-icon">${s.icon}</div>
+        <div class="acc-labels">
+          <div class="acc-title">${s.title}</div>
+          <div class="acc-sub">${s.sub}</div>
+        </div>
+        <div class="acc-meta">
+          <div class="acc-count">${i+1}/7</div>
+          <div class="acc-chevron">▾</div>
+        </div>
+      </div>
+      <div class="acc-body" id="body_${s.id}">${s.render()}</div>`;
+    app.appendChild(item);
+  });
+  // Open section 1 by default
+  toggleAcc('s1');
+}
+
+function toggleAcc(id){
+  const item=document.getElementById('acc_'+id);
+  const isOpen=item.classList.contains('open');
+  // Regenerate body content to reflect current D state
+  const secs=sections();
+  const s=secs.find(x=>x.id===id);
+  if(s){document.getElementById('body_'+id).innerHTML=s.render();}
+  item.classList.toggle('open',!isOpen);
+}
+
+// ── WAPP ──────────────────────────────────────────────────
+function wappSub(secId,subLabel,items,opts,map){
+  let t=`*${subLabel}:*\n`;
+  items.forEach(item=>{
+    const v=getItemVal(secId,subLabel,item,opts);
+    t+=`  · ${item}: ${map[v]||v}\n`;
+  });
+  return t;
+}
+
+function buildWapp(){
+  const now=new Date().toLocaleString('es-CO');
+  let t=`🚗 *LISTA DE CHEQUEO VEHÍCULOS — GRANAUTOS*\nFormato FO-GO-04 | Fecha: ${now}\n${'─'.repeat(30)}\n`;
+  t+=`\n📌 *INFORMACIÓN GENERAL*\n· Placa: ${gv('placa')} · Marca: ${gv('marca')} ${gv('linea')} ${gv('modelo')}\n· Km: ${gv('km')} · Inspector: ${gv('inspector')}\n· Caja: ${gv('caja')} · Botón/seg: ${gv('boton')}\n· Prot. pintura: ${gv('pintura')} · Contraparte: ${gv('contraparte')}\n`;
+  t+=`\n📌 *INTERIOR*\n`;
+  t+=wappSub('s2','Tapizados',['Tapizado sillas','Tapizado techo','Tapizado piso','Cinturones','Cabeceros','Carteras puertas','Millare','Parasoles','Guantera','Volante','Tablero acrílico','Pomo','Consola central'],['B','R','D','M'],{B:'Bueno',R:'Regular',D:'Desgaste',M:'Malo'});
+  t+=wappSub('s2','Electro',['Radio','Bocina','Tablero','Limpiabrisa','Calefacción','Aire acondicionado','Elevavidrios','Sunroof','Espejos','Testigos tablero','Alarma','Mecanismo sillas'],['B','R','M','NA'],{B:'Bueno',R:'Regular',M:'Malo',NA:'N/A'});
+  t+=`· Códigos de falla: ${gv('s2_codigos')}\n`;if(D.s2_obs)t+=`· Obs: ${D.s2_obs}\n`;
+  t+=`\n📌 *LUCES*\n`;
+  t+=wappSub('s3','Luces',['Altas','Bajas','Cocuyos','Exploradoras','Direccionales','Estacionarias','Stop trasero','Stop baúl','Tercer stop','Reversa','Luz placa','Luz techo'],['B','R','M','NA'],{B:'Bueno',R:'Regular',M:'Malo',NA:'N/A'});
+  if(D.s3_obs)t+=`· Obs: ${D.s3_obs}\n`;
+  t+=`\n📌 *CARROCERÍA Y ESTRUCTURA*\n`;
+  const caroItems=['Guardabarro izq','Puerta del. izq','Puerta tra. izq','Estribo izq','Costado izq','Bomper trasero','Tapa baúl','Costado der','Estribo der','Puerta tra. der','Puerta del. der','Guardabarro der','Bomper delantero','Capot','Capota','Espejos laterales','Espaldar cabina','Piso baúl'];
+  const caroMap={BN:'Bueno',RY:'Rayón',SM:'Sumido',RP:'Repintado',RR:'Reg.rep',MR:'Mal.rep',DM:'Def.media',DF:'Def.fuerte',IM:'Imper.',PD:'P.deter.',OX:'Oxidac.',CO:'Corrosión',FI:'Fisura',RG:'Regular',NA:'N/A'};
+  caroItems.forEach(item=>{const v=getItemVal('s4','Carroceria',item,['BN','RY','SM','RP','RR','MR','DM','DF','IM','PD','OX','CO','FI','RG','NA']);t+=`  · ${item}: ${caroMap[v]||v}\n`;});
+  if(D.s4_obs_caro)t+=`· Obs caro: ${D.s4_obs_caro}\n`;
+  const estItems=['Punta del. der','Punta del. izq','Viga derecha','Viga izquierda','Traviesas','Paral panorámico','Parales centrales','Largueros capota','Parales costado','Parales baúl','Punta tra. der','Punta tra. izq','Guardapolvo met','Panel trasero','Cajas de impacto'];
+  estItems.forEach(item=>{const v=getItemVal('s4','Estructura',item,['BN','RY','SM','RP','RR','MR','DM','DF','IM','PD','OX','CO','FI','NA']);t+=`  · ${item}: ${caroMap[v]||v}\n`;});
+  if(D.s4_obs_est)t+=`· Obs est: ${D.s4_obs_est}\n`;
+  t+=`\n📌 *FLUIDOS, FUGAS Y LLANTAS*\n`;
+  t+=wappSub('s5','Fluidos',['Aceite de motor','Refrigerante','Dirección hidráulica','Líquido frenos','Limpiabrisa'],['N','Me','B','C'],{N:'Normal',Me:'Medio',B:'Bajo',C:'Crítico'});
+  t+=wappSub('s5','Fugas',['Aceite motor','Aceite caja','Dir. hidráulica','Amortiguadores','Refrigerante','Frenos','Guardapolvos','Diferencial','Combustible'],['S','No','H'],{S:'Sí fuga',No:'No fuga',H:'Humedad'});
+  t+=`· Llantas: DI=${D.ll_di||'—'}mm DD=${D.ll_dd||'—'}mm TI=${D.ll_ti||'—'}mm TD=${D.ll_td||'—'}mm Rep=${D.ll_rep||'—'}mm\n`;
+  if(D.s5_obs)t+=`· Obs: ${D.s5_obs}\n`;
+  t+=`\n📌 *SUSPENSIÓN Y PARTES BAJAS*\n`;
+  t+=wappSub('s6','Suspension',['Discos','Past delantera','Past trasera','Espirales','Muelles','Ejes','Caja de dirección','Brazo axial','Terminales','Rótulas','Estabilizadora','Tijeras','Bujes','Rodamientos'],['B','R','M','NA'],{B:'Bueno',R:'Regular',M:'Malo',NA:'N/A'});
+  t+=wappSub('s6','PartesBajas',['Catalizador','Silenciador','Tubería','Cuna motor','Protectores inf.','Paso ruedas','Refuerzo piso','Impermeabilizado'],['B','R','M','NA'],{B:'Bueno',R:'Regular',M:'Malo',NA:'N/A'});
+  if(D.s6_obs)t+=`· Obs: ${D.s6_obs}\n`;
+  t+=`\n📌 *RECHAZOS Y CIERRE*\n· Rechazo general: ${gv('rechazo_gral')}\n· Asegurable: ${gv('asegurable')}\n· Rec. estructural: ${gv('rec_est')} · Rec. carrocería: ${gv('rec_caro')}\n· Rec. eléctrico: ${gv('rec_elec')} · Rec. mecánico: ${gv('rec_mec')}\n`;
+  if(D.obs_finales)t+=`· Obs finales: ${D.obs_finales}\n`;
+  t+=`\n${'─'.repeat(30)}\n_App Inspección Granautos · FO-GO-04_`;
+  return t;
+}
+
+function copyWapp(){
+  const txt=buildWapp();
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>toast('✅ Copiado para WhatsApp')).catch(()=>fallbackCopy(txt));
+  } else {fallbackCopy(txt);}
+}
+function fallbackCopy(txt){
+  const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.focus();ta.select();
+  try{document.execCommand('copy');toast('✅ Copiado para WhatsApp');}catch(e){toast('❌ Error al copiar');}
+  document.body.removeChild(ta);
+}
+
+// ── PDF ───────────────────────────────────────────────────
+function genPDF(){
+  if(!window.jspdf){toast('Cargando PDF...');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+  const pw=210,margin=14,cw=pw-2*margin;
+  let y=0;
+
+  function checkPage(need){if(y+need>280){doc.addPage();y=14;}}
+
+  // Header block
+  doc.setFillColor(26,26,26);doc.rect(0,0,pw,30,'F');
+  // Logo text
+  doc.setFontSize(18);doc.setFont('helvetica','bold');
+  doc.setTextColor(255,255,255);doc.text('Gran',14,13);
+  doc.setFillColor(46,125,197);doc.circle(42,10,5,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(11);doc.text('a',40,13);
+  doc.setFontSize(18);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+  doc.text('utos',47,13);
+  doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(200,200,200);
+  doc.text('LISTA DE CHEQUEO VEHÍCULOS · FO-GO-04',14,20);
+  doc.text(`Fecha: ${new Date().toLocaleString('es-CO')}`,14,26);
+  doc.setFillColor(46,125,197);doc.rect(0,30,pw,2,'F');
+  y=38;
+
+  // Veh info
+  doc.setFillColor(240,244,248);doc.roundedRect(margin,y,cw,22,3,3,'F');
+  doc.setFontSize(13);doc.setFont('helvetica','bold');doc.setTextColor(26,26,26);
+  doc.text(`${gv('marca')} ${gv('linea')} ${gv('modelo')}`,margin+4,y+7);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(80,80,80);
+  doc.text(`Placa: ${gv('placa')}   |   Km: ${gv('km')}   |   Caja: ${gv('caja')}   |   Inspector: ${gv('inspector')}`,margin+4,y+13);
+  doc.text(`Botón/Seg: ${gv('boton')}   |   Prot. pintura: ${gv('pintura')}   |   Contraparte: ${gv('contraparte')}`,margin+4,y+18);
+  y+=28;
+
+  // Section header helper
+  function secHead(title){
+    checkPage(10);
+    doc.setFillColor(26,26,26);doc.rect(margin,y,cw,7,'F');
+    doc.setFillColor(46,125,197);doc.rect(margin,y,3,7,'F');
+    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+    doc.text(title.toUpperCase(),margin+6,y+5);
+    y+=10;
+  }
+
+  function subHead(title){
+    checkPage(8);
+    doc.setFillColor(232,240,248);doc.rect(margin,y,cw,6,'F');
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(46,125,197);
+    doc.text(title,margin+3,y+4.2);y+=8;
+  }
+
+  function tableSection(items,opts,hdrs,map,secId,subLabel){
+    checkPage(8);
+    // header row
+    const colW=Math.min(28,(cw-60)/(opts.length));
+    doc.setFillColor(248,248,248);doc.rect(margin,y,cw,5.5,'F');
+    doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(80,80,80);
+    doc.text('ÍTEM',margin+2,y+4);
+    opts.forEach((o,i)=>doc.text(hdrs[i]||o,margin+62+i*colW,y+4,{align:'center'}));
+    y+=6;
+    items.forEach(item=>{
+      checkPage(6);
+      const val=getItemVal(secId,subLabel,item,opts);
+      doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(40,40,40);
+      doc.text(item.substring(0,22),margin+2,y+3.8);
+      opts.forEach((o,i)=>{
+        const cx=margin+62+i*colW;
+        if(val===o){
+          const colors={B:[34,197,94],R:[245,158,11],D:[249,115,22],M:[239,68,68],NA:[148,163,184],N:[34,197,94],Me:[245,158,11],Ba:[249,115,22],C:[239,68,68],S:[239,68,68],H:[245,158,11],BN:[34,197,94],RY:[245,158,11],SM:[249,115,22],RP:[59,130,246],RR:[167,139,250],MR:[239,68,68],DM:[220,38,38],DF:[153,27,27],IM:[8,145,178],PD:[217,119,6],OX:[146,64,14],CO:[124,58,237],FI:[190,18,60],RG:[100,116,139]};
+          const c=colors[o]||[46,125,197];
+          doc.setFillColor(...c);doc.roundedRect(cx-5,y+0.5,10,5,1.5,1.5,'F');
+          doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(6.5);
+          doc.text(o,cx,y+4,{align:'center'});
+        } else {
+          doc.setDrawColor(220,220,220);doc.roundedRect(cx-5,y+0.5,10,5,1.5,1.5,'S');
+        }
+      });
+      doc.setDrawColor(240,240,240);doc.line(margin,y+5.5,margin+cw,y+5.5);
+      y+=6;
+    });
+    y+=3;
+  }
+
+  function obs(label,val){
+    if(!val)return;
+    checkPage(10);
+    doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.setTextColor(80,80,80);
+    doc.text(label+':',margin,y);y+=4;
+    doc.setFont('helvetica','normal');doc.setTextColor(60,60,60);
+    const lines=doc.splitTextToSize(val,cw);
+    lines.forEach(l=>{checkPage(5);doc.text(l,margin,y);y+=4;});
+    y+=3;
+  }
+
+  // INTERIOR
+  secHead('Interior');
+  subHead('Tapizados');
+  tableSection(['Tapizado sillas','Tapizado techo','Tapizado piso','Cinturones','Cabeceros','Carteras puertas','Millare','Parasoles','Guantera','Volante','Tablero acrílico','Pomo','Consola central'],['B','R','D','M'],['B','R','D','M'],{},'s2','Tapizados');
+  subHead('Electro interior');
+  tableSection(['Radio','Bocina','Tablero','Limpiabrisa','Calefacción','Aire acondicionado','Elevavidrios','Sunroof','Espejos','Testigos tablero','Alarma','Mecanismo sillas'],['B','R','M','NA'],['B','R','M','N/A'],{},'s2','Electro');
+  obs('Obs. interior',D.s2_obs);
+
+  // LUCES
+  secHead('Luces');
+  tableSection(['Altas','Bajas','Cocuyos','Exploradoras','Direccionales','Estacionarias','Stop trasero','Stop baúl','Tercer stop','Reversa','Luz placa','Luz techo'],['B','R','M','NA'],['B','R','M','N/A'],{},'s3','Luces');
+  obs('Obs. luces',D.s3_obs);
+
+  // CARROCERÍA
+  secHead('Carrocería y Estructura');
+  subHead('Carrocería');
+  tableSection(['Guardabarro izq','Puerta del. izq','Puerta tra. izq','Estribo izq','Costado izq','Bomper trasero','Tapa baúl','Costado der','Estribo der','Puerta tra. der','Puerta del. der','Guardabarro der','Bomper delantero','Capot','Capota','Espejos laterales','Espaldar cabina','Piso baúl'],['BN','RY','SM','RP','RR','MR','DM','DF','IM','PD','OX','CO','FI','RG','NA'],['BN','RY','SM','RP','RR','MR','DM','DF','IM','PD','OX','CO','FI','RG','N/A'],{},'s4','Carroceria');
+  obs('Obs. carrocería',D.s4_obs_caro);
+  subHead('Estructura');
+  tableSection(['Punta del. der','Punta del. izq','Viga derecha','Viga izquierda','Traviesas','Paral panorámico','Parales centrales','Largueros capota','Parales costado','Parales baúl','Punta tra. der','Punta tra. izq','Guardapolvo met','Panel trasero','Cajas de impacto'],['BN','RY','SM','RP','RR','MR','DM','DF','IM','PD','OX','CO','FI','NA'],['BN','RY','SM','RP','RR','MR','DM','DF','IM','PD','OX','CO','FI','N/A'],{},'s4','Estructura');
+  obs('Obs. estructura',D.s4_obs_est);
+
+  // FLUIDOS
+  secHead('Fluidos, Fugas y Llantas');
+  subHead('Nivel de fluidos');
+  tableSection(['Aceite de motor','Refrigerante','Dirección hidráulica','Líquido frenos','Limpiabrisa'],['N','Me','B','C'],['N','Me','B','C'],{},'s5','Fluidos');
+  subHead('Fugas');
+  tableSection(['Aceite motor','Aceite caja','Dir. hidráulica','Amortiguadores','Refrigerante','Frenos','Guardapolvos','Diferencial','Combustible'],['S','No','H'],['S','N','H'],{},'s5','Fugas');
+  checkPage(14);
+  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(80,80,80);
+  doc.text('PROFUNDIDAD LLANTAS (mm):',margin,y);y+=5;
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(40,40,40);
+  doc.text(`Del. Izq: ${D.ll_di||'—'}mm  |  Del. Der: ${D.ll_dd||'—'}mm  |  Tra. Izq: ${D.ll_ti||'—'}mm  |  Tra. Der: ${D.ll_td||'—'}mm  |  Repuesto: ${D.ll_rep||'—'}mm`,margin,y);y+=6;
+  obs('Obs. fluidos/llantas',D.s5_obs);
+
+  // SUSPENSIÓN
+  secHead('Suspensión y Partes Bajas');
+  subHead('Suspensión');
+  tableSection(['Discos','Past delantera','Past trasera','Espirales','Muelles','Ejes','Caja de dirección','Brazo axial','Terminales','Rótulas','Estabilizadora','Tijeras','Bujes','Rodamientos'],['B','R','M','NA'],['B','R','M','N/A'],{},'s6','Suspension');
+  subHead('Partes bajas');
+  tableSection(['Catalizador','Silenciador','Tubería','Cuna motor','Protectores inf.','Paso ruedas','Refuerzo piso','Impermeabilizado'],['B','R','M','NA'],['B','R','M','N/A'],{},'s6','PartesBajas');
+  obs('Obs. suspensión',D.s6_obs);
+
+  // RECHAZOS
+  secHead('Rechazos y Cierre');
+  checkPage(30);
+  const rechazos=[['Rechazo general',gv('rechazo_gral')],['Asegurable',gv('asegurable')],['Rec. estructural',gv('rec_est')],['Rec. carrocería',gv('rec_caro')],['Rec. eléctrico',gv('rec_elec')],['Rec. mecánico',gv('rec_mec')]];
+  const cols=3;const rw=cw/cols;
+  rechazos.forEach(([lbl,val],i)=>{
+    const rx=margin+(i%cols)*rw;const ry2=y+Math.floor(i/cols)*18;
+    const isSi=val==='SÍ';const isNo=val==='NO';
+    doc.setFillColor(isSi?254:isNo?240:248,isSi?242:isNo?253:250,isSi?242:isNo?244:252);
+    doc.roundedRect(rx+1,ry2,rw-2,15,2,2,'F');
+    doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);
+    doc.text(lbl,rx+rw/2,ry2+5,{align:'center'});
+    doc.setFontSize(10);doc.setFont('helvetica','bold');
+    doc.setTextColor(isSi?200:isNo?34:100,isSi?30:isNo?100:100,isSi?30:isNo?34:100);
+    doc.text(val,rx+rw/2,ry2+12,{align:'center'});
+  });
+  y+=40;
+  obs('Observaciones finales',D.obs_finales);
+
+  // Footer
+  const totalPages=doc.internal.getNumberOfPages();
+  for(let p=1;p<=totalPages;p++){
+    doc.setPage(p);
+    doc.setFillColor(26,26,26);doc.rect(0,287,pw,10,'F');
+    doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(150,150,150);
+    doc.text(`Granautos · FO-GO-04 · Placa: ${gv('placa')} · Inspector: ${gv('inspector')}`,pw/2,293,{align:'center'});
+    doc.text(`Pág. ${p} / ${totalPages}`,pw-margin,293,{align:'right'});
+  }
+
+  doc.save(`Inspeccion_${(D.placa||'VEH').replace(/\s/g,'')}_${Date.now()}.pdf`);
+  toast('📄 PDF generado');
+}
+
+function newInsp(){
+  if(!confirm('¿Iniciar nueva inspección? Se borrarán los datos actuales.'))return;
+  Object.keys(D).forEach(k=>delete D[k]);
+  buildApp();updateProgress();
+  toast('🔄 Nueva inspección iniciada');
+}
+
+// INIT
+buildApp();
+updateProgress();
+</script>
+</body>
+</html>
